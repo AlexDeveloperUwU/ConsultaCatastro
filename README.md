@@ -4,6 +4,10 @@
 
 This project was fully generated with AI: I gave the orders and prompts, and I reviewed the result. / Este proyecto está generado íntegramente con IA: yo di las órdenes e indicaciones y revisé el resultado.
 
+![Demo of ConsultaCatastro](assets/demo.gif)
+
+[Full video (MP4)](assets/demo.mp4)
+
 [English](#english) | [Español](#espanol)
 
 <a id="english"></a>
