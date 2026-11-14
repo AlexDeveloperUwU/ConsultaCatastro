@@ -1,5 +1,9 @@
 # ConsultaCatastro
 
+<a href="https://github.com/AlexDeveloperUwU#ai-usage"><img src="assets/ai-generated.svg" alt="AI usage: Generated" width="520"/></a>
+
+This project was fully generated with AI: I gave the orders and prompts, and I reviewed the result. / Este proyecto está generado íntegramente con IA: yo di las órdenes e indicaciones y revisé el resultado.
+
 [English](#english) | [Español](#espanol)
 
 <a id="english"></a>
