@@ -55,7 +55,7 @@ function Get-XlsxParts([string]$SheetName, [int]$ColumnCount, [string]$SheetData
     $main = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
     $rel = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
     $pkgRel = 'xmlns="http://schemas.openxmlformats.org/package/2006/relationships"'
-    $widths = 14, 16, 10, 10, 24, 10, 20, 18, 16, 50, 26, 40
+    $widths = 14, 16, 10, 10, 24, 10, 20, 18, 16, 50, 18, 22, 12, 26, 40
     $cols = -join (0..($ColumnCount - 1) | ForEach-Object { "<col min=`"$($_ + 1)`" max=`"$($_ + 1)`" width=`"$($widths[$_])`" customWidth=`"1`"/>" })
     $font = '<sz val="11"/><name val="Calibri"/>'
     [ordered]@{

@@ -4,8 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Catastro</title>
+<link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="script" href="https://cdn.tailwindcss.com/3.4.17">
+<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js" integrity="sha384-9Ax3MmS9AClxJyd5/zafcXXjxmwFhZCdsT6HJoJjarvCaAkJlk5QDzjLJm+Wdx5F" crossorigin="anonymous">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+__HEAD__
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
 <script>
 tailwind.config = {
@@ -53,21 +60,6 @@ function catastro() {
     </div>
     <span class="text-[15px] text-muted" x-text="t.generated.replace('{0}', d.generated)"></span>
   </header>
-
-  <section class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-    <div class="rounded-2xl border border-line bg-white px-6 py-5">
-      <span class="text-sm text-muted" x-text="t.statTotal"></span>
-      <div class="text-4xl font-bold" x-text="records.length"></div>
-    </div>
-    <div class="rounded-2xl border border-line bg-white px-6 py-5">
-      <span class="text-sm text-muted" x-text="t.statPdf"></span>
-      <div class="text-4xl font-bold text-brand" x-text="records.filter(r => r.hasPdf).length"></div>
-    </div>
-    <div class="rounded-2xl border border-line bg-white px-6 py-5">
-      <span class="text-sm text-muted" x-text="t.statProblems"></span>
-      <div class="text-4xl font-bold" :class="count('problems') ? 'text-bad' : 'text-muted'" x-text="count('problems')"></div>
-    </div>
-  </section>
 
   <section class="flex flex-wrap items-center gap-3">
     <label class="flex min-h-[48px] flex-1 basis-80 items-center gap-2.5 rounded-xl border border-[#CFCABD] bg-white px-4 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20">

@@ -66,13 +66,39 @@ function ConvertTo-Property($Item, $Bico) {
         The parent bico node, used for the plot surface.
     #>
     $ref = if ($Item.idbi) { $Item.idbi.rc } else { $Item.rc }
-    $location = $Item.dt.locs.lors.lorus.cpp
+    $rural = $Item.dt.locs.lors.lorus
+    $urban = $Item.dt.locs.lous.lourb
+    $crops = @($Bico.lspr | Where-Object { $_ } | ForEach-Object { @{ name = $_.dspr.dcc; code = $_.dspr.ccc; intensity = $_.dspr.ip; area = $_.dspr.ssp } })
+    $builds = @($Bico.lcons | Where-Object { $_ } | ForEach-Object {
+            $inner = $_.dt.lourb.loint
+            $where = (@(@('es', 'pt', 'pu') | Where-Object { $inner.$_ } | ForEach-Object { "$_ $($inner.$_)" }) -join ' / ').ToUpper()
+            @{ use = $_.lcd; type = $_.dvcons.dtip; area = $_.dfcons.stl; where = $where }
+        })
     [pscustomobject]@{
         RC = '{0}{1}{2}{3}{4}' -f $ref.pc1, $ref.pc2, $ref.car, $ref.cc1, $ref.cc2
         Cp = $Item.dt.loine.cp; Cmc = $Item.dt.cmc; Prov = $Item.dt.np; Mun = $Item.dt.nm
         Type = $Item.idbi.cn; Use = $Item.debi.luso; Built = $Item.debi.sfc; Plot = $Bico.finca.dff.ss
-        Addr = $Item.ldt; Pol = $location.cpo; Par = $location.cpa
+        Addr = $Item.ldt; Pol = $rural.cpp.cpo; Par = $rural.cpp.cpa
+        Locality = $Item.dt.nem; Place = $rural.npa; Postal = $urban.dp
+        Age = $Item.debi.ant
+        Crops = $crops; Builds = $builds; Lat = ''; Lon = ''
     }
+}
+
+function Get-Coordinates($Prop) {
+    <#
+    .SYNOPSIS
+        Fetches the centre of the property's parcel as latitude and longitude (WGS 84).
+    .OUTPUTS
+        Hashtable with Lat and Lon, or empty strings when the Catastro has none. Never throws.
+    #>
+    $none = @{ Lat = ''; Lon = '' }
+    try {
+        $url = "$($script:Config.CoordsApi)/Consulta_CPMRC?Provincia=&Municipio=&SRS=EPSG:4326&RefCat=$($Prop.RC.Substring(0, 14))"
+        $point = (Get-Json $url).Consulta_CPMRCResult.coordenadas.coord | Select-Object -First 1
+        if (-not $point.geo.xcen) { return $none }
+        @{ Lat = $point.geo.ycen; Lon = $point.geo.xcen }
+    } catch { $none }
 }
 
 function Get-LookupUrls($Request) {
@@ -101,12 +127,14 @@ function Get-ResponseItems($Bico) {
     @(if ($Bico.bi) { $Bico.bi } elseif ($Bico.lrcdnp.rcdnp) { $Bico.lrcdnp.rcdnp })
 }
 
-function New-LookupResult($Props = @(), [string]$ErrorKind = '', [string]$Detail = '') {
+function New-LookupResult($Props = @(), [string]$ErrorKind = '', [string]$Detail = '', [string]$Code = '') {
     <#
     .SYNOPSIS
         Creates the outcome of a lookup: the properties found, or an error kind (NotFound, Network, Unexpected) with detail.
+    .PARAMETER Code
+        Catastro error code (Annex I of its web services guide), when the service gave one.
     #>
-    [pscustomobject]@{ Props = @($Props); ErrorKind = $ErrorKind; Detail = $Detail; Succeeded = (-not $ErrorKind) }
+    [pscustomobject]@{ Props = @($Props); ErrorKind = $ErrorKind; Detail = $Detail; Code = $Code; Succeeded = (-not $ErrorKind) }
 }
 
 function Find-Properties($Request) {
@@ -121,15 +149,15 @@ function Find-Properties($Request) {
         One response can contain several properties. A municipality that is not found is reported, never corrected.
     #>
     try {
-        $detail = ''
+        $detail = ''; $code = ''
         foreach ($url in Get-LookupUrls $Request) {
             try { $json = Get-Json $url } catch { return New-LookupResult -ErrorKind 'Network' -Detail $_.Exception.Message }
             $result = if ($json.consulta_dnprcResult) { $json.consulta_dnprcResult } else { $json.consulta_dnpppResult }
             $items = @(Get-ResponseItems $result.bico)
             if ($items.Count) { return New-LookupResult -Props @($items | ForEach-Object { ConvertTo-Property $_ $result.bico }) }
-            if ($result.lerr) { $detail = $result.lerr[0].des }
+            if ($result.lerr) { $detail = $result.lerr[0].des; $code = [string]$result.lerr[0].cod }
         }
-        New-LookupResult -ErrorKind 'NotFound' -Detail $detail
+        New-LookupResult -ErrorKind 'NotFound' -Detail $detail -Code $code
     } catch {
         New-LookupResult -ErrorKind 'Unexpected' -Detail $_.Exception.Message
     }
@@ -141,7 +169,10 @@ function Format-LookupError($Lookup, [hashtable]$Texts) {
         Turns a failed lookup into a message in the language of the given text table.
     #>
     switch ($Lookup.ErrorKind) {
-        'NotFound' { if ($Lookup.Detail) { "$($Texts.errNotFound): $($Lookup.Detail)" } else { $Texts.errNotFound } }
+        'NotFound' {
+            if ($Lookup.Code -and $Texts.errCodes.ContainsKey($Lookup.Code)) { return $Texts.errCodes[$Lookup.Code] }
+            if ($Lookup.Detail) { "$($Texts.errNotFound): $($Lookup.Detail)" } else { $Texts.errNotFound }
+        }
         'Network' { "$($Texts.errNet): $($Lookup.Detail)" }
         default { $Lookup.Detail }
     }

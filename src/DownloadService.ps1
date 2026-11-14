@@ -9,7 +9,8 @@ function New-SummaryRow($Prop, [string]$PdfPath, [string]$Status, [hashtable]$Te
         Builds the Excel row of a property, in the order of the summary headers.
     #>
     $type = if ($Prop.Type) { $Texts[$Prop.Type] } else { '' }
-    , @($Prop.Prov, $Prop.Mun, $Prop.Pol, $Prop.Par, $Prop.RC, $type, $Prop.Use, $Prop.Built, $Prop.Plot, $Prop.Addr, $PdfPath, $Status)
+    , @($Prop.Prov, $Prop.Mun, $Prop.Pol, $Prop.Par, $Prop.RC, $type, $Prop.Use, $Prop.Built, $Prop.Plot, $Prop.Addr,
+        $Prop.Locality, $Prop.Place, $Prop.Postal, $PdfPath, $Status)
 }
 
 function New-ErrorRow($Source, [string]$Message) {
@@ -17,7 +18,7 @@ function New-ErrorRow($Source, [string]$Message) {
     .SYNOPSIS
         Builds the Excel row of a request or property that failed, keeping whatever identifying data is known.
     #>
-    , @($Source.Prov, $Source.Mun, $Source.Pol, $Source.Par, $Source.RC, '', '', '', '', '', '', $Message)
+    , @($Source.Prov, $Source.Mun, $Source.Pol, $Source.Par, $Source.RC, '', '', '', '', '', '', '', '', '', $Message)
 }
 
 function Save-PropertyFiles($Prop, [string]$ResultsDir, [hashtable]$Texts) {
@@ -27,6 +28,8 @@ function Save-PropertyFiles($Prop, [string]$ResultsDir, [hashtable]$Texts) {
     .OUTPUTS
         Object with Row (the Excel row), Record (the report page data) and Saved (whether the PDF was obtained).
     #>
+    $point = Get-Coordinates $Prop
+    $Prop.Lat = $point.Lat; $Prop.Lon = $point.Lon
     $folder = Join-Path $ResultsDir $Prop.RC
     $null = New-Item -ItemType Directory -Path $folder -Force
     Write-InternetShortcut (Join-Path $folder $Texts.mapFile) (Get-MapUrl $Prop)

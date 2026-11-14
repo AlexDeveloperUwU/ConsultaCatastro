@@ -4,8 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Consulta</title>
+<link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="script" href="https://cdn.tailwindcss.com/3.4.17">
+<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js" integrity="sha384-9Ax3MmS9AClxJyd5/zafcXXjxmwFhZCdsT6HJoJjarvCaAkJlk5QDzjLJm+Wdx5F" crossorigin="anonymous">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+__HEAD__
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
 <script>
 tailwind.config = {
@@ -25,7 +32,9 @@ function consulta() {
     get facts() {
       const r = this.r, t = this.t;
       return [[t.province, r.province], [t.municipality, r.municipality], [t.polygon, r.polygon || '-'], [t.parcel, r.parcel || '-'],
-              [t.type, r.type || '-'], [t.use, r.use || '-'], [t.built, r.built], [t.plot, r.plot]];
+              [t.type, r.type || '-'], [t.use, r.use || '-'], [t.built, r.built], [t.plot, r.plot],
+              [t.locality, r.locality], [t.place, r.place], [t.postal, r.postal], [t.age, r.age], [t.coords, r.lat ? r.lat + ', ' + r.lon : '']]
+        .filter((f, i) => i < 8 || f[1]);
     },
     copy() {
       const done = () => { this.copied = true; setTimeout(() => { this.copied = false; }, 1500); };
@@ -101,9 +110,52 @@ function consulta() {
         <span class="flex flex-1 flex-col"><span class="text-base font-semibold" x-text="t.dataTitle"></span><span class="text-[13px] text-muted" x-text="t.dataSub"></span></span>
         <svg class="h-[18px] w-[18px] text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>
       </a>
+      <template x-for="p in [[r.googleUrl, t.googleTitle]]" :key="p[1]">
+        <a x-show="p[0]" :href="p[0]" target="_blank" rel="noopener" class="flex min-h-[44px] items-center gap-3.5 rounded-2xl border border-line bg-white px-4 py-4">
+          <svg class="h-6 w-6 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg>
+          <span class="flex flex-1 flex-col"><span class="text-base font-semibold" x-text="p[1]"></span><span class="text-[13px] text-muted" x-text="t.pointSub"></span></span>
+          <svg class="h-[18px] w-[18px] text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>
+        </a>
+      </template>
       <p class="mt-1.5 text-[13px] leading-relaxed text-muted" x-text="t.notCertified"></p>
     </aside>
   </div>
+
+  <section x-show="r.crops.length" class="overflow-x-auto rounded-2xl border border-line bg-white px-6 pb-2 pt-2">
+    <h2 class="pb-2 pt-4 text-lg font-semibold" x-text="t.cropsTitle"></h2>
+    <table class="w-full min-w-[480px] border-collapse text-left text-[15px]">
+      <thead><tr class="border-b border-line text-[13px] text-muted">
+        <th class="py-2.5 pr-3 font-semibold" x-text="t.cropName"></th><th class="px-3 py-2.5 font-semibold" x-text="t.cropClass"></th>
+        <th class="px-3 py-2.5 font-semibold" x-text="t.cropIntensity"></th><th class="py-2.5 pl-3 text-right font-semibold" x-text="t.cropArea"></th>
+      </tr></thead>
+      <tbody>
+        <template x-for="(c, i) in r.crops" :key="i">
+          <tr class="border-b border-[#ECE9E0] last:border-0">
+            <td class="py-3 pr-3 font-medium" x-text="c.name || '-'"></td><td class="px-3 py-3" x-text="c.code || '-'"></td>
+            <td class="px-3 py-3" x-text="c.intensity || '-'"></td><td class="whitespace-nowrap py-3 pl-3 text-right tabular-nums" x-text="c.area ? c.area + ' m²' : '-'"></td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+  </section>
+
+  <section x-show="r.builds.length" class="overflow-x-auto rounded-2xl border border-line bg-white px-6 pb-2 pt-2">
+    <h2 class="pb-2 pt-4 text-lg font-semibold" x-text="t.buildsTitle"></h2>
+    <table class="w-full min-w-[480px] border-collapse text-left text-[15px]">
+      <thead><tr class="border-b border-line text-[13px] text-muted">
+        <th class="py-2.5 pr-3 font-semibold" x-text="t.buildUse"></th><th class="px-3 py-2.5 font-semibold" x-text="t.buildType"></th>
+        <th class="px-3 py-2.5 font-semibold" x-text="t.buildWhere"></th><th class="py-2.5 pl-3 text-right font-semibold" x-text="t.buildArea"></th>
+      </tr></thead>
+      <tbody>
+        <template x-for="(b, i) in r.builds" :key="i">
+          <tr class="border-b border-[#ECE9E0] last:border-0">
+            <td class="py-3 pr-3 font-medium" x-text="b.use || '-'"></td><td class="px-3 py-3" x-text="b.type || '-'"></td>
+            <td class="px-3 py-3" x-text="b.where || '-'"></td><td class="whitespace-nowrap py-3 pl-3 text-right tabular-nums" x-text="b.area ? b.area + ' m²' : '-'"></td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+  </section>
 
   <nav class="flex flex-wrap justify-between gap-3 pt-2">
     <a x-show="d.prev" :href="d.prev" class="inline-flex min-h-[44px] items-center gap-2 text-[15px] font-medium text-brand hover:underline">

@@ -38,6 +38,7 @@ function New-ParcelTab {
     $ui.tProv = New-UiControl ComboBox 10 38 230 28 $tab; $ui.tMun = New-UiControl ComboBox 250 38 230 28 $tab
     foreach ($box in $ui.tProv, $ui.tMun) { $box.AutoCompleteMode = 'SuggestAppend'; $box.AutoCompleteSource = 'ListItems' }
     $ui.tPol = New-UiControl TextBox 490 38 100 28 $tab; $ui.tPar = New-UiControl TextBox 600 38 100 28 $tab
+    $ui.tPol.MaxLength = $script:Config.MaxPolygonDigits; $ui.tPar.MaxLength = $script:Config.MaxParcelDigits
     $ui.addPP = New-UiControl Button 10 78 160 34 $tab
     Initialize-ProvinceList
 }

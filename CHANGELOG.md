@@ -4,6 +4,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-11-14
+
+### Added
+
+- Property pages show coordinates with a Google Maps link, the crops of rural parcels, the constructions of urban properties, locality, place name, postal code and year built.
+- The summary spreadsheet gains locality, place name and postal code columns.
+- Plain-language messages for the Catastro error codes.
+- Input limits: polygon up to 3 digits, parcel up to 5.
+- HTML pages preload their scripts, fonts and neighbouring pages.
+
+### Changed
+
+- The index page no longer shows the three counter tiles.
+
 ## [1.0.0] - 2026-11-14
 
 ### Added

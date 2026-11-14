@@ -15,9 +15,10 @@ function Remove-Accents([string]$Text) {
 function Test-ParcelFields([string]$Province, [string]$Municipality, [string]$Polygon, [string]$Parcel) {
     <#
     .SYNOPSIS
-        Validates the by-parcel form: names are required, polygon and parcel must be whole numbers.
+        Validates the by-parcel form: names are required, polygon (up to 3 digits) and parcel (up to 5) must be whole numbers.
     #>
-    [bool]($Province -and $Municipality -and $Polygon -match '^\d+$' -and $Parcel -match '^\d+$')
+    $maxPolygon = $script:Config.MaxPolygonDigits; $maxParcel = $script:Config.MaxParcelDigits
+    [bool]($Province -and $Municipality -and $Polygon -match "^\d{1,$maxPolygon}$" -and $Parcel -match "^\d{1,$maxParcel}$")
 }
 
 function Test-ReferenceFormat([string]$Reference) {
@@ -53,6 +54,15 @@ function Get-MapUrl($Prop) {
         Builds the Sede map URL of a property (uses the 14-character parcel reference).
     #>
     "$($script:Config.MapUrl)?del=$($Prop.Cp)&mun=$($Prop.Cmc)&refcat=$($Prop.RC.Substring(0, 14))"
+}
+
+function Get-MapPointUrls($Prop) {
+    <#
+    .SYNOPSIS
+        Builds the Google Maps link to the parcel centre, or an empty string without coordinates.
+    #>
+    if (-not $Prop.Lat) { return @{ Google = '' } }
+    @{ Google = "https://www.google.com/maps?q=$($Prop.Lat),$($Prop.Lon)" }
 }
 
 function Get-DataUrl($Prop) {
