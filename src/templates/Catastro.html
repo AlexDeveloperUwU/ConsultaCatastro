@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catastro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+tailwind.config = {
+  theme: { extend: {
+    colors: { paper: '#F6F4EE', ink: '#1B1F1A', brand: '#1F5C45', line: '#DDD9CE', muted: '#565D52', bad: '#A3341F', 'brand-soft': '#E4EEE8', 'bad-soft': '#F6E3DE', 'urban-soft': '#E6EAF3', urban: '#2B4A85' },
+    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] }
+  } }
+}
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js" integrity="sha384-9Ax3MmS9AClxJyd5/zafcXXjxmwFhZCdsT6HJoJjarvCaAkJlk5QDzjLJm+Wdx5F" crossorigin="anonymous"></script>
+<script type="application/json" id="data">__DATA__</script>
+<script>
+function catastro() {
+  const d = JSON.parse(document.getElementById('data').textContent);
+  return {
+    d, t: d.t, records: d.records, filter: 'all', query: '',
+    isProblem(r) { return !!r.error || !r.hasPdf; },
+    matches(r) {
+      const q = this.query.trim().toLowerCase();
+      return !q || [r.rc, r.municipality, r.province, r.address, r.use].join(' ').toLowerCase().includes(q);
+    },
+    inFilter(r, key) {
+      return key === 'all' || (key === 'rural' && r.typeCode === 'RU') || (key === 'urban' && r.typeCode === 'UR') || (key === 'problems' && this.isProblem(r));
+    },
+    count(key) { return this.records.filter(r => this.inFilter(r, key)).length; },
+    get shown() { return this.records.filter(r => this.inFilter(r, this.filter) && this.matches(r)); },
+    get filters() {
+      return [['all', this.t.fAll], ['rural', this.t.fRural], ['urban', this.t.fUrban], ['problems', this.t.fProblems]]
+        .filter(f => f[0] === 'all' || this.count(f[0]) > 0 || this.filter === f[0]);
+    },
+    get filtering() { return this.filter !== 'all' || this.query.trim() !== ''; },
+    reset() { this.filter = 'all'; this.query = ''; },
+    open(r) { if (r.href) { window.location.href = r.href; } }
+  };
+}
+</script>
+</head>
+<body class="bg-paper font-sans text-ink antialiased" x-data="catastro()" x-init="document.title = t.title + ' - Catastro'; document.documentElement.lang = d.lang">
+<div class="mx-auto flex w-full max-w-[1680px] flex-col gap-6 px-4 pb-16 pt-10 sm:px-8 lg:px-12">
+
+  <header class="flex flex-wrap items-end justify-between gap-4">
+    <div class="flex flex-col gap-1.5">
+      <span class="text-[13px] font-semibold uppercase tracking-widest text-brand" x-text="t.eyebrow"></span>
+      <h1 class="text-3xl font-bold leading-tight sm:text-4xl" x-text="t.title"></h1>
+    </div>
+    <span class="text-[15px] text-muted" x-text="t.generated.replace('{0}', d.generated)"></span>
+  </header>
+
+  <section class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div class="rounded-2xl border border-line bg-white px-6 py-5">
+      <span class="text-sm text-muted" x-text="t.statTotal"></span>
+      <div class="text-4xl font-bold" x-text="records.length"></div>
+    </div>
+    <div class="rounded-2xl border border-line bg-white px-6 py-5">
+      <span class="text-sm text-muted" x-text="t.statPdf"></span>
+      <div class="text-4xl font-bold text-brand" x-text="records.filter(r => r.hasPdf).length"></div>
+    </div>
+    <div class="rounded-2xl border border-line bg-white px-6 py-5">
+      <span class="text-sm text-muted" x-text="t.statProblems"></span>
+      <div class="text-4xl font-bold" :class="count('problems') ? 'text-bad' : 'text-muted'" x-text="count('problems')"></div>
+    </div>
+  </section>
+
+  <section class="flex flex-wrap items-center gap-3">
+    <label class="flex min-h-[48px] flex-1 basis-80 items-center gap-2.5 rounded-xl border border-[#CFCABD] bg-white px-4 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20">
+      <svg class="h-[18px] w-[18px] text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <input type="search" x-model="query" :placeholder="t.search" :aria-label="t.search" class="flex-1 bg-transparent text-base outline-none">
+    </label>
+    <div class="flex flex-wrap gap-2">
+      <template x-for="f in filters" :key="f[0]">
+        <button type="button" @click="filter = f[0]" :aria-pressed="filter === f[0]"
+          :class="filter === f[0] ? 'border-brand bg-brand text-white' : 'border-[#CFCABD] bg-white text-ink hover:border-brand'"
+          class="inline-flex min-h-[48px] items-center gap-2 rounded-full border px-4 text-sm font-semibold">
+          <span x-text="f[1]"></span>
+          <span class="rounded-full px-2 text-xs" :class="filter === f[0] ? 'bg-white/20' : 'bg-paper text-muted'" x-text="count(f[0])"></span>
+        </button>
+      </template>
+    </div>
+  </section>
+
+  <section class="overflow-x-auto rounded-2xl border border-line bg-white">
+    <table class="w-full min-w-[960px] border-collapse text-left">
+      <thead>
+        <tr class="border-b border-line text-[13px] font-semibold text-muted">
+          <th scope="col" class="px-6 py-4 font-semibold" x-text="t.colRef"></th>
+          <th scope="col" class="px-3 py-4 font-semibold" x-text="t.colMun"></th>
+          <th scope="col" class="px-3 py-4 font-semibold" x-text="t.colPolPar"></th>
+          <th scope="col" class="px-3 py-4 font-semibold" x-text="t.colType"></th>
+          <th scope="col" class="px-3 py-4 font-semibold" x-text="t.colUse"></th>
+          <th scope="col" class="px-3 py-4 text-right font-semibold" x-text="t.colPlot"></th>
+          <th scope="col" class="px-6 py-4 text-right font-semibold" x-text="t.colLinks"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <template x-for="r in shown" :key="r.rc + r.municipality + r.polpar">
+          <tr class="border-b border-[#ECE9E0] last:border-0" :class="r.href ? 'cursor-pointer hover:bg-paper/70' : ''" @click="open(r)">
+            <td class="px-6 py-3.5 align-middle">
+              <span class="break-all font-mono text-sm font-medium" :class="r.error ? 'text-muted' : 'text-brand'" x-text="r.rc || '-'"></span>
+              <span x-show="r.error" class="mt-0.5 block max-w-md text-xs leading-snug text-bad" x-text="r.error"></span>
+            </td>
+            <td class="px-3 py-3.5 align-middle text-[15px]"><span x-text="r.municipality || '-'"></span><span class="block text-[13px] text-muted" x-text="r.province"></span></td>
+            <td class="whitespace-nowrap px-3 py-3.5 align-middle text-[15px]" x-text="r.polpar"></td>
+            <td class="px-3 py-3.5 align-middle"><span x-show="r.type" x-text="r.type" :class="r.typeCode === 'UR' ? 'bg-urban-soft text-urban' : 'bg-brand-soft text-brand'" class="inline-block rounded-full px-2.5 py-0.5 text-[13px] font-semibold"></span></td>
+            <td class="px-3 py-3.5 align-middle text-[15px]" x-text="r.use || '-'"></td>
+            <td class="whitespace-nowrap px-3 py-3.5 text-right align-middle text-[15px] tabular-nums" x-text="r.plot"></td>
+            <td class="px-6 py-3.5 align-middle">
+              <div class="flex justify-end gap-2">
+                <a x-show="r.href" :href="r.href" @click.stop class="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-semibold text-white hover:bg-[#164A37]">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
+                  <span x-text="t.linkData"></span>
+                </a>
+                <a x-show="r.hasPdf" :href="r.pdfHref" target="_blank" rel="noopener" @click.stop class="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-[#CFCABD] px-3.5 text-sm font-semibold text-brand hover:bg-paper">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>
+                  <span x-text="t.linkPdf"></span>
+                </a>
+                <span x-show="r.href && !r.hasPdf" class="inline-flex min-h-[44px] items-center rounded-lg bg-bad-soft px-3.5 text-sm font-semibold text-bad" x-text="t.noPdf"></span>
+              </div>
+            </td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+    <div x-show="shown.length === 0" class="flex flex-col items-center gap-3 px-6 py-12 text-center">
+      <p class="text-base text-muted" x-text="t.empty"></p>
+      <button type="button" @click="reset()" class="min-h-[44px] rounded-lg border border-[#CFCABD] px-4 text-sm font-semibold text-brand hover:bg-paper" x-text="t.clear"></button>
+    </div>
+  </section>
+
+  <p class="flex flex-wrap items-center gap-3 text-sm text-muted">
+    <span x-text="t.showing.replace('{0}', shown.length).replace('{1}', records.length)"></span>
+    <button type="button" x-show="filtering" @click="reset()" class="font-semibold text-brand underline underline-offset-2" x-text="t.clear"></button>
+  </p>
+</div>
+</body>
+</html>

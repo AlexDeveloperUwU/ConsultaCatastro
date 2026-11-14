@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Consulta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+tailwind.config = {
+  theme: { extend: {
+    colors: { paper: '#F6F4EE', ink: '#1B1F1A', brand: '#1F5C45', line: '#DDD9CE', muted: '#565D52', bad: '#A3341F', 'brand-soft': '#E4EEE8', 'bad-soft': '#F6E3DE', 'urban-soft': '#E6EAF3', urban: '#2B4A85' },
+    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] }
+  } }
+}
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js" integrity="sha384-9Ax3MmS9AClxJyd5/zafcXXjxmwFhZCdsT6HJoJjarvCaAkJlk5QDzjLJm+Wdx5F" crossorigin="anonymous"></script>
+<script type="application/json" id="data">__DATA__</script>
+<script>
+function consulta() {
+  const d = JSON.parse(document.getElementById('data').textContent);
+  return {
+    d, t: d.t, r: d.record, copied: false,
+    get facts() {
+      const r = this.r, t = this.t;
+      return [[t.province, r.province], [t.municipality, r.municipality], [t.polygon, r.polygon || '-'], [t.parcel, r.parcel || '-'],
+              [t.type, r.type || '-'], [t.use, r.use || '-'], [t.built, r.built], [t.plot, r.plot]];
+    },
+    copy() {
+      const done = () => { this.copied = true; setTimeout(() => { this.copied = false; }, 1500); };
+      if (navigator.clipboard) { navigator.clipboard.writeText(this.r.rc).then(done, done); return; }
+      const box = document.createElement('textarea'); box.value = this.r.rc; document.body.appendChild(box);
+      box.select(); document.execCommand('copy'); box.remove(); done();
+    }
+  };
+}
+</script>
+</head>
+<body class="bg-paper font-sans text-ink antialiased" x-data="consulta()" x-init="document.title = r.rc + ' - Catastro'; document.documentElement.lang = d.lang">
+<div class="mx-auto flex w-full max-w-[1680px] flex-col gap-7 px-4 pb-16 pt-10 sm:px-8 lg:px-12">
+
+  <a href="../Catastro.html" class="inline-flex min-h-[44px] items-center gap-2 self-start text-[15px] font-medium text-brand hover:underline">
+    <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    <span x-text="t.back"></span>
+  </a>
+
+  <header class="flex flex-col gap-3.5">
+    <div class="flex flex-wrap items-center gap-2.5">
+      <span x-show="r.type" x-text="r.type" :class="r.typeCode === 'UR' ? 'bg-urban-soft text-urban' : 'bg-brand-soft text-brand'" class="inline-block rounded-full px-2.5 py-0.5 text-[13px] font-semibold"></span>
+      <span x-show="!r.hasPdf" x-text="t.noPdfWarn" class="inline-block rounded-full bg-bad-soft px-2.5 py-0.5 text-[13px] font-semibold text-bad"></span>
+    </div>
+    <div class="flex flex-wrap items-center gap-3.5">
+      <h1 class="break-all font-mono text-3xl font-medium tracking-wide" x-text="r.rc"></h1>
+      <button type="button" @click="copy()" :aria-label="t.copy" class="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#CFCABD] bg-white px-3.5 text-sm font-medium">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 012-2h9"/></svg>
+        <span x-text="copied ? t.copied : t.copy"></span>
+      </button>
+    </div>
+    <span class="text-base text-muted" x-text="r.address"></span>
+  </header>
+
+  <div class="flex flex-wrap items-start gap-5">
+
+    <section class="min-w-0 flex-[999_1_560px] rounded-2xl border border-line bg-white px-6 pb-3 pt-2">
+      <h2 class="pb-2 pt-4 text-lg font-semibold" x-text="t.sectionData"></h2>
+      <div class="flex flex-wrap items-start gap-6">
+        <dl class="grid min-w-0 flex-[1_1_360px] grid-cols-2 gap-x-8">
+          <template x-for="f in facts" :key="f[0]">
+            <div class="border-t border-[#ECE9E0] py-3.5">
+              <dt class="text-[13px] text-muted" x-text="f[0]"></dt>
+              <dd class="text-base font-medium" x-text="f[1]"></dd>
+            </div>
+          </template>
+        </dl>
+        <figure x-show="r.hasCroquis" class="mt-3.5 flex flex-none flex-col items-center gap-2">
+          <img src="Croquis.png" :alt="t.croquis" width="200" height="200" class="h-[200px] w-[200px] rounded-xl border border-line bg-[#FBFAF6] object-contain">
+          <figcaption class="text-[13px] text-muted" x-text="t.croquis"></figcaption>
+        </figure>
+      </div>
+      <div class="border-t border-[#ECE9E0] pb-2 pt-3.5">
+        <div class="text-[13px] text-muted" x-text="t.address"></div>
+        <div class="text-base font-medium" x-text="r.address"></div>
+      </div>
+    </section>
+
+    <aside class="flex min-w-0 flex-[1_1_320px] flex-col gap-3">
+      <h2 class="text-lg font-semibold" x-text="t.docsTitle"></h2>
+      <a x-show="r.hasPdf" :href="r.pdfFile" class="flex min-h-[44px] items-center gap-3.5 rounded-2xl bg-brand px-4 py-4 text-white no-underline">
+        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>
+        <span class="flex flex-1 flex-col"><span class="text-base font-semibold" x-text="t.pdfTitle"></span><span class="text-[13px] opacity-85" x-text="t.pdfSub"></span></span>
+        <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </a>
+      <a :href="r.mapUrl" target="_blank" rel="noopener" class="flex min-h-[44px] items-center gap-3.5 rounded-2xl border border-line bg-white px-4 py-4">
+        <svg class="h-6 w-6 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        <span class="flex flex-1 flex-col"><span class="text-base font-semibold" x-text="t.mapTitle"></span><span class="text-[13px] text-muted" x-text="t.mapSub"></span></span>
+        <svg class="h-[18px] w-[18px] text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>
+      </a>
+      <a :href="r.dataUrl" target="_blank" rel="noopener" class="flex min-h-[44px] items-center gap-3.5 rounded-2xl border border-line bg-white px-4 py-4">
+        <svg class="h-6 w-6 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
+        <span class="flex flex-1 flex-col"><span class="text-base font-semibold" x-text="t.dataTitle"></span><span class="text-[13px] text-muted" x-text="t.dataSub"></span></span>
+        <svg class="h-[18px] w-[18px] text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>
+      </a>
+      <p class="mt-1.5 text-[13px] leading-relaxed text-muted" x-text="t.notCertified"></p>
+    </aside>
+  </div>
+
+  <nav class="flex flex-wrap justify-between gap-3 pt-2">
+    <a x-show="d.prev" :href="d.prev" class="inline-flex min-h-[44px] items-center gap-2 text-[15px] font-medium text-brand hover:underline">
+      <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+      <span x-text="t.prev"></span>
+    </a>
+    <span x-show="!d.prev"></span>
+    <a x-show="d.next" :href="d.next" class="inline-flex min-h-[44px] items-center gap-2 text-[15px] font-medium text-brand hover:underline">
+      <span x-text="t.next"></span>
+      <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+  </nav>
+</div>
+</body>
+</html>
